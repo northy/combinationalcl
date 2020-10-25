@@ -1,0 +1,3 @@
+[submodule "ext-libs/rapidcheck"]
+	path = ext-libs/rapidcheck
+	url = https://github.com/wuerges/rapidcheck.git
