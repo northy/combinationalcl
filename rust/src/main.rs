@@ -2,6 +2,9 @@ use std::env;
 use std::process::exit;
 use rand::distributions::{Distribution, Uniform};
 use chrono::{Datelike, Timelike, Utc};
+use rand::Rng;
+use std::fs;
+use std::io::Write;
 
 #[macro_use]
 mod helper;
@@ -46,14 +49,34 @@ fn main() {
     let mut identifiers:Vec<char> = Vec::new();
     for i in 33..127 { identifiers.push(char::from(i)) }
 
-    println!("$date {}-{:02}-{:02} {:02}:{:02}:{:02} $end", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second());
-    println!("$version 1.0.0 $end");
-    println!("$comment combinationalcl $end");
-    println!("$timescale 1ns $end");
-    println!("$scope module logic $end");
-    for i in 0..(&mut circuit).len() {
-        println!("$var wire 1 {} {} $end",helper::genid(&identifiers, i),circuit[i].0);
+    let mut vcdout = fs::OpenOptions::new()
+    .read(false)
+    .write(true)
+    .create(true)
+    .open("out.vcd")
+    .expect("Unable to open file");
+    
+    vcdout.set_len(0).expect("Error manipulating file");
+
+    writeln!(&mut vcdout, "$date {}-{:02}-{:02} {:02}:{:02}:{:02} $end", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second()).expect("Error writing line");
+    writeln!(&mut vcdout, "$version 1.0.0 $end").expect("Error writing line");
+    writeln!(&mut vcdout, "$comment combinationalcl $end").expect("Error writing line");
+    writeln!(&mut vcdout, "$timescale 1ns $end").expect("Error writing line");
+    writeln!(&mut vcdout, "$scope module logic $end").expect("Error writing line");
+    for i in 0..(&circuit).len() {
+        writeln!(&mut vcdout, "$var wire 1 {} {} $end",helper::genid(&identifiers, i),circuit[i].0).expect("Error writing line");
     }
-    println!("$upscope $end");
-    println!("$enddefinitions $end");
+    writeln!(&mut vcdout, "$upscope $end").expect("Error writing line");
+    writeln!(&mut vcdout, "$enddefinitions $end").expect("Error writing line");
+    writeln!(&mut vcdout, "$dumpvars").expect("Error writing line");
+    for i in 0..(&circuit).len() {
+        writeln!(&mut vcdout, "{}{}",0,helper::genid(&identifiers, i)).expect("Error writing line");
+    }
+    writeln!(&mut vcdout, "$end").expect("Error writing line");
+    for t in 0..100 {
+        writeln!(&mut vcdout, "#{}",t).expect("Error writing line");
+        for i in 0..(&circuit).len() {
+            writeln!(&mut vcdout, "{}{}",rng.gen_range(0,2),helper::genid(&identifiers, i)).expect("Error writing line");
+        }
+    }
 }
