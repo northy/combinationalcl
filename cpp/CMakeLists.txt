@@ -24,4 +24,12 @@ IF(EXISTS "${PROJECT_SOURCE_DIR}/ext-libs/rapidcheck/CMakeLists.txt")
   add_subdirectory("ext-libs/rapidcheck")
 ENDIF()
 
+add_executable(CombinationaCL app/combinationacl.cxx)
+target_link_libraries(CombinationaCL
+  sources
+  OpenCL
+  ${Boost_FILESYSTEM_LIBRARY}
+  ${Boost_SYSTEM_LIBRARY}
+)
+
 add_subdirectory(test)
