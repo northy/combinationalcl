@@ -64,20 +64,20 @@ fn main() {
         writeln!(&mut vcdout, "$comment combinationalcl $end").expect("Error writing line");
         writeln!(&mut vcdout, "$timescale 1ns $end").expect("Error writing line");
         writeln!(&mut vcdout, "$scope module logic $end").expect("Error writing line");
-        for i in 0..(&circuit).len() {
-            writeln!(&mut vcdout, "$var wire 1 {} {} $end",helper::genid(&identifiers, i),circuit[i].0).expect("Error writing line");
+        for i in 0..ic {
+            writeln!(&mut vcdout, "$var wire 1 {} {} $end",helper::genid(&identifiers, i as usize),circuit[i as usize].0).expect("Error writing line");
         }
         writeln!(&mut vcdout, "$upscope $end").expect("Error writing line");
         writeln!(&mut vcdout, "$enddefinitions $end").expect("Error writing line");
         writeln!(&mut vcdout, "$dumpvars").expect("Error writing line");
-        for i in 0..(&circuit).len() {
-            writeln!(&mut vcdout, "{}{}",0,helper::genid(&identifiers, i)).expect("Error writing line");
+        for i in 0..ic {
+            writeln!(&mut vcdout, "{}{}",0,helper::genid(&identifiers, i as usize)).expect("Error writing line");
         }
         writeln!(&mut vcdout, "$end").expect("Error writing line");
         for t in 0..100 {
             writeln!(&mut vcdout, "#{}",t).expect("Error writing line");
-            for i in 0..(&circuit).len() {
-                writeln!(&mut vcdout, "{}{}",rng.gen_range(0,2),helper::genid(&identifiers, i)).expect("Error writing line");
+            for i in 0..ic {
+                writeln!(&mut vcdout, "{}{}",rng.gen_range(0,2),helper::genid(&identifiers, i as usize)).expect("Error writing line");
             }
         }
     }
