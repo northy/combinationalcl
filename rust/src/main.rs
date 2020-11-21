@@ -92,7 +92,7 @@ fn main() {
 
         kernelout.set_len(0).expect("Error manipulating file");
 
-        writeln!(&mut kernelout, "__kernel void combinational(int ic, __global const uchar* inputs, int oc, __global uchar* outputs) {{").expect("Error writing line");
+        writeln!(&mut kernelout, "__kernel void combinational(int ic, __global const char* inputs, int oc, __global char* outputs) {{").expect("Error writing line");
         writeln!(&mut kernelout,"int time = get_global_id(0);").expect("Error writing line");
         //writeln!(&mut kernelout,"int id = get_global_id(1);").expect("Error writing line");
         for i in 0..ic { //inputs
