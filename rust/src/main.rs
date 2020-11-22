@@ -108,19 +108,19 @@ fn main() {
                     },
                     '.' => {
                         if second {
-                            outstr+=&"&&".to_string();
+                            outstr+=&"&".to_string();
                         }
                         outstr+=&circuit[*dp as usize].0;
                     },
                     '+' => {
                         if second {
-                            outstr+=&"||".to_string();
+                            outstr+=&"|".to_string();
                         }
                         outstr+=&circuit[*dp as usize].0;
                     },
                     '^' => {
                         if second {
-                            outstr+=&"^^".to_string();
+                            outstr+=&"^".to_string();
                         }
                         outstr+=&circuit[*dp as usize].0;
                     },
