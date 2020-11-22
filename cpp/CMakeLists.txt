@@ -17,6 +17,7 @@ ENDIF()
 add_library(sources
   src/parser.cxx
   src/compiler.cxx
+  src/helper.cxx
 )
 include_directories(include)
 

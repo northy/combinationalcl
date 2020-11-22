@@ -9,9 +9,12 @@
 #define CL_HPP_MINIMUM_OPENCL_VERSION 120
 #define CL_HPP_TARGET_OPENCL_VERSION 120
 #include <CL/cl2.hpp>
+#define CL_STD "-cl-std=CL2.0"
 
 #include <compiler.hpp>
+#include <parser.hpp>
 #include <vcd.hpp>
+#include <helper.hpp>
 
 #define CPU_GPU_DEF CL_DEVICE_TYPE_ALL
 
@@ -101,20 +104,44 @@ int main(int argc, char** argv) {
     std::ios::sync_with_stdio(0); std::cout.tie(0); std::cin.tie(0);
     cl_int err;
 
-    if (argc<4) {
-        std::cerr << "./CombinationaCL <input count> <output count> <kernel file>" << std::endl;
+    if (argc<5) {
+        std::cerr << "./CombinationaCL <input count> <output count> <kernel file> <vcd file>" << std::endl;
         return 1;
     }
     int ic=atoi(argv[1]), oc=atoi(argv[2]);
     std::string kernelpath = argv[3];
-
-    std::cout << "ic: " << ic << " oc: " << oc << " kernel: " << kernelpath << std::endl;
-
-    int runtime=8;
+    const char* vcdpath = argv[4];
 
     srand(time(0));
 
     //START
+
+    //MEMORY OBJECTS
+
+    //Parsing VCD
+    auto vcd_ast = parser::parsevcd::parse_vcd_file(vcdpath);
+    if (vcd_ast) {
+        std::cout << "Success parsing VCD file" << std::endl;
+    }
+    else {
+        std::cerr << "Error while parsing VCD file" << std::endl;
+        return 1;
+    }
+
+    int runtime = vcd_ast->timestamps.size();
+
+    std::vector<char> inputs(runtime*ic,1), outputs(runtime*oc);
+
+    for (vcd::Timestamp t : vcd_ast->timestamps) {
+        for (int i=0; i<t.dumps.size();++i) {
+            inputs[t.time*ic+i] = t.dumps[i].value[0]-'0';
+        }
+    }
+
+    /*for (int i=0; i<runtime*ic; i++) {
+        std::cout << (int)inputs[i] << ' ';
+        if ((i+1)%ic==0) std::cout << std::endl;
+    }*/
 
     //PLATFORM
     cl::vector<cl::Platform> platformList;
@@ -144,10 +171,16 @@ int main(int argc, char** argv) {
     
     //CREATE PROGRAM
     cl::Program program(context, programSrc, true, &err);
-    if (err) {std::cerr << "Program error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
+    if (err) {
+        std::cerr << "Program error: " << getErrorString(err) << " (" << err << ")\n";
+
+        std::cerr << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device, &err) << std::endl;
+
+        return 1;
+    }
 
     try {
-        err = program.build("-cl-std=CL2.0");
+        err = program.build(CL_STD);
     }
     catch (...) {
         // Print build info for all devices
@@ -178,8 +211,6 @@ int main(int argc, char** argv) {
     if (err) {std::cerr << "Command queue error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
 
     //BUFFERS
-    std::vector<char> inputs(runtime*ic,1), outputs(runtime*oc);
-
     cl::Buffer inputs_buffer(context, inputs.begin(), inputs.end(), true);
     if (err) {std::cerr << "Buffer error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
     cl::Buffer outputs_buffer(context, CL_MEM_WRITE_ONLY, sizeof(float)*runtime*oc);
@@ -221,11 +252,29 @@ int main(int argc, char** argv) {
     cl::copy(queue, outputs_buffer, outputs.begin(), outputs.end());
 
     //FINISH
-    for (int i=0; i<runtime*oc; i++) {
+    /*for (int i=0; i<runtime*oc; i++) {
         std::cout << (int)outputs[i] << ' ';
         if ((i+1)%oc==0) std::cout << std::endl;
-    }
+    }*/
     std::cout << "Done\n";
+
+    for (int j=0; j<oc; ++j) {
+        std::string name = "o"+std::to_string((int)j);
+        std::string id = genid(ic+j);
+        vcd_ast->signals.push_back(vcd::Signal{"wire",1,id,name});
+        vcd_ast->initial_dump.push_back(vcd::Dump{std::vector<char>{'0'},id});
+        for (int i=0; i<runtime; i++) {
+            char value = '0'+outputs[i*oc+j];
+            vcd_ast->timestamps[i].dumps.push_back(vcd::Dump{std::vector<char>{value},id});
+        }
+    }
+    
+    std::ofstream out("out_sim.vcd");
+    if (out.is_open()) {
+        std::cout << "Compiling file...\n";
+        compiler::compilevcd::compile_vcd_file(vcd_ast.value(),out);
+        out.close();
+    }
 
     return 0;
 }
