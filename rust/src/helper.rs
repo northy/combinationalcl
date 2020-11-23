@@ -8,7 +8,7 @@ macro_rules! parseinput {
             },
             Err(_) => {
                 eprintln!("error: argument {} not an integer", $x);
-                return;
+                return Ok(());
             },
         };
     };
@@ -33,7 +33,7 @@ pub fn choosecuts(id:i64,port:char)->Vec<i64> {
     
     match port {
         '.' | '+' | '^' => vec![rng.gen_range(0,id),rng.gen_range(0,id)],
-        '!' | 'o' => vec![rng.gen_range(0,id)],
+        '!' => vec![rng.gen_range(0,id)],
         _ => vec![]
     }
 }

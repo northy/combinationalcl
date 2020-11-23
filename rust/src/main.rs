@@ -5,11 +5,12 @@ use chrono::{Datelike, Timelike, Utc};
 use rand::Rng;
 use std::fs;
 use std::io::Write;
+use std::io;
 
 #[macro_use]
 mod helper;
 
-fn main() {
+fn main()->io::Result<()> {
     let args: Vec<String> = env::args().collect();
     if args.len()<4 {
         println!("Example input: ./gen n i o
@@ -28,13 +29,16 @@ fn main() {
     let sz:i64 = nc+ic+oc;
     let die = Uniform::from(0..ports.len());
     let mut rng = rand::thread_rng();
-    for i in 0..sz {
+    for i in 0..sz-oc {
         if i<ic { circuit.push(("i".to_string()+&i.to_string(),'i',vec![])); }
-        else if sz-i<=oc { circuit.push(("o".to_string()+&(oc-(sz-i)).to_string(),'o',helper::choosecuts(i,'o'))); }
+        //format!
         else {
             let port:char = ports[die.sample(&mut rng)];
             circuit.push(("p".to_string()+&(i-ic).to_string(),port,helper::choosecuts(i,port)));
         }
+    }
+    for i in sz-oc..sz { //outputs
+        circuit.push(("o".to_string()+&(oc-(sz-i)).to_string(),'o',vec![rng.gen_range(0,sz-oc)]));
     }
     for c in &circuit {
         print!("{} ({}) => ",c.0, c.1);
@@ -50,34 +54,34 @@ fn main() {
     for i in 33..127 { identifiers.push(char::from(i)) }
 
     {
-        let mut vcdout = fs::OpenOptions::new()
+        let vcdout = &mut fs::OpenOptions::new()
         .read(false)
         .write(true)
         .create(true)
         .open("out.vcd")
         .expect("Unable to open file");
-        
+
         vcdout.set_len(0).expect("Error manipulating file");
 
-        writeln!(&mut vcdout, "$date {}-{:02}-{:02} {:02}:{:02}:{:02} $end", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second()).expect("Error writing line");
-        writeln!(&mut vcdout, "$version 1.0.0 $end").expect("Error writing line");
-        writeln!(&mut vcdout, "$comment combinationalcl $end").expect("Error writing line");
-        writeln!(&mut vcdout, "$timescale 1ns $end").expect("Error writing line");
-        writeln!(&mut vcdout, "$scope module logic $end").expect("Error writing line");
+        writeln!(vcdout, "$date {}-{:02}-{:02} {:02}:{:02}:{:02} $end", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second()).expect("Error writing line");
+        writeln!(vcdout, "$version 1.0.0 $end").expect("Error writing line");
+        writeln!(vcdout, "$comment combinationalcl $end").expect("Error writing line");
+        writeln!(vcdout, "$timescale 1ns $end").expect("Error writing line");
+        writeln!(vcdout, "$scope module logic $end").expect("Error writing line");
         for i in 0..ic {
-            writeln!(&mut vcdout, "$var wire 1 {} {} $end",helper::genid(&identifiers, i as usize),circuit[i as usize].0).expect("Error writing line");
+            writeln!(vcdout, "$var wire 1 {} {} $end",helper::genid(&identifiers, i as usize),circuit[i as usize].0).expect("Error writing line");
         }
-        writeln!(&mut vcdout, "$upscope $end").expect("Error writing line");
-        writeln!(&mut vcdout, "$enddefinitions $end").expect("Error writing line");
-        writeln!(&mut vcdout, "$dumpvars").expect("Error writing line");
+        writeln!(vcdout, "$upscope $end").expect("Error writing line");
+        writeln!(vcdout, "$enddefinitions $end").expect("Error writing line");
+        writeln!(vcdout, "$dumpvars").expect("Error writing line");
         for i in 0..ic {
-            writeln!(&mut vcdout, "{}{}",0,helper::genid(&identifiers, i as usize)).expect("Error writing line");
+            writeln!(vcdout, "{}{}",0,helper::genid(&identifiers, i as usize)).expect("Error writing line");
         }
-        writeln!(&mut vcdout, "$end").expect("Error writing line");
+        writeln!(vcdout, "$end").expect("Error writing line");
         for t in 0..100 {
-            writeln!(&mut vcdout, "#{}",t).expect("Error writing line");
+            writeln!(vcdout, "#{}",t).expect("Error writing line");
             for i in 0..ic {
-                writeln!(&mut vcdout, "{}{}",rng.gen_range(0,2),helper::genid(&identifiers, i as usize)).expect("Error writing line");
+                writeln!(vcdout, "{}{}",rng.gen_range(0,2),helper::genid(&identifiers, i as usize)).expect("Error writing line");
             }
         }
     }
@@ -92,19 +96,20 @@ fn main() {
 
         kernelout.set_len(0).expect("Error manipulating file");
 
-        writeln!(&mut kernelout, "__kernel void combinational(int ic, __global const char* inputs, int oc, __global char* outputs) {{").expect("Error writing line");
+        writeln!(&mut kernelout, "__kernel void combinational(int ic, __constant const char* inputs, int oc, __global char* outputs) {{").expect("Error writing line");
         writeln!(&mut kernelout,"int time = get_global_id(0);").expect("Error writing line");
-        //writeln!(&mut kernelout,"int id = get_global_id(1);").expect("Error writing line");
         for i in 0..ic { //inputs
             writeln!(&mut kernelout,"char {} = inputs[time*ic+{}];", &circuit[i as usize].0, i).expect("Error writing line");
         }
-        for i in ic..ic+nc { //inputs
+        for i in ic..ic+nc { //ports
             let mut outstr = "char ".to_string()+&circuit[i as usize].0.to_string()+&" = ".to_string();
             let mut second=false;
             for dp in &circuit[i as usize].2 {
                 match &circuit[i as usize].1 {
                     '!' => {
-                        outstr+=&("!".to_string()+&circuit[*dp as usize].0);
+                        outstr.push_str("!");
+                        outstr.push_str(&circuit[*dp as usize].0);
+                        //outstr+=&("!".to_string()+&circuit[*dp as usize].0);
                     },
                     '.' => {
                         if second {
@@ -131,9 +136,11 @@ fn main() {
             outstr+=";";
             writeln!(&mut kernelout,"{}",outstr).expect("Error writing line");
         }
-        for i in ic+nc..ic+nc+oc { //inputs
+        for i in ic+nc..ic+nc+oc { //outputs
             writeln!(&mut kernelout,"outputs[time*oc+{}]={};", i-(ic+nc), &circuit[circuit[i as usize].2[0] as usize].0).expect("Error writing line");
         }
         writeln!(&mut kernelout,"}}").expect("Error writing line");
     }
+
+    Ok(())
 }
