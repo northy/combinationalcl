@@ -12,16 +12,18 @@ mod helper;
 
 fn main()->io::Result<()> {
     let args: Vec<String> = env::args().collect();
-    if args.len()<4 {
-        println!("Example input: ./gen n i o
+    if args.len()<5 {
+        println!("Example input: ./gen n i o k
                 n - port count
                 i - input count
-                o - output count");
+                o - output count
+                k - events count");
         exit(1);
     }
     let nc:i64 = parseinput!(args[1]);
     let ic:i64 = parseinput!(args[2]);
     let oc:i64 = parseinput!(args[3]);
+    let k:i64 = parseinput!(args[4]);
 
     let mut circuit : Vec<(String,char,Vec<i64>)> = Vec::new();
     let ports:Vec<char> = vec!['+','.','!','^'];
@@ -78,7 +80,7 @@ fn main()->io::Result<()> {
             writeln!(vcdout, "{}{}",0,helper::genid(&identifiers, i as usize)).expect("Error writing line");
         }
         writeln!(vcdout, "$end").expect("Error writing line");
-        for t in 0..100 {
+        for t in 0..k {
             writeln!(vcdout, "#{}",t).expect("Error writing line");
             for i in 0..ic {
                 writeln!(vcdout, "{}{}",rng.gen_range(0,2),helper::genid(&identifiers, i as usize)).expect("Error writing line");
