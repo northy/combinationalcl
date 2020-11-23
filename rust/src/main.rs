@@ -96,36 +96,35 @@ fn main()->io::Result<()> {
 
         kernelout.set_len(0).expect("Error manipulating file");
 
-        writeln!(&mut kernelout, "__kernel void combinational(int ic, __constant const char* inputs, int oc, __global char* outputs) {{").expect("Error writing line");
+        writeln!(&mut kernelout, "__kernel void combinational(const int ic, __constant const char* inputs, const int pc, __global char* ports, const int oc, __global char* outputs) {{").expect("Error writing line");
         writeln!(&mut kernelout,"int time = get_global_id(0);").expect("Error writing line");
         for i in 0..ic { //inputs
-            writeln!(&mut kernelout,"char {} = inputs[time*ic+{}];", &circuit[i as usize].0, i).expect("Error writing line");
+            writeln!(&mut kernelout,"const char {} = inputs[time*ic+{}];", &circuit[i as usize].0, i).expect("Error writing line");
         }
         for i in ic..ic+nc { //ports
-            let mut outstr = "char ".to_string()+&circuit[i as usize].0.to_string()+&" = ".to_string();
+            let mut outstr = format!("const char {} = ports[time*pc+{}] = ",circuit[i as usize].0,i-ic);
             let mut second=false;
             for dp in &circuit[i as usize].2 {
                 match &circuit[i as usize].1 {
                     '!' => {
                         outstr.push_str("!");
                         outstr.push_str(&circuit[*dp as usize].0);
-                        //outstr+=&("!".to_string()+&circuit[*dp as usize].0);
                     },
                     '.' => {
                         if second {
-                            outstr+=&"&".to_string();
+                            outstr.push_str("&");
                         }
                         outstr+=&circuit[*dp as usize].0;
                     },
                     '+' => {
                         if second {
-                            outstr+=&"|".to_string();
+                            outstr.push_str("|");
                         }
                         outstr+=&circuit[*dp as usize].0;
                     },
                     '^' => {
                         if second {
-                            outstr+=&"^".to_string();
+                            outstr.push_str("^");
                         }
                         outstr+=&circuit[*dp as usize].0;
                     },

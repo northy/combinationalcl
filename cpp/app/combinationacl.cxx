@@ -104,13 +104,13 @@ int main(int argc, char** argv) {
     std::ios::sync_with_stdio(0); std::cout.tie(0); std::cin.tie(0);
     cl_int err;
 
-    if (argc<5) {
-        std::cerr << "./CombinationaCL <input count> <output count> <kernel file> <vcd file>" << std::endl;
+    if (argc<6) {
+        std::cerr << "./CombinationaCL <ports count> <input count> <output count> <kernel file> <vcd file>" << std::endl;
         return 1;
     }
-    int ic=atoi(argv[1]), oc=atoi(argv[2]);
-    std::string kernelpath = argv[3];
-    const char* vcdpath = argv[4];
+    int pc=atoi(argv[1]), ic=atoi(argv[2]), oc=atoi(argv[3]);
+    std::string kernelpath = argv[4];
+    const char* vcdpath = argv[5];
 
     srand(time(0));
 
@@ -130,7 +130,9 @@ int main(int argc, char** argv) {
 
     int runtime = vcd_ast->timestamps.size();
 
-    std::vector<char> inputs(runtime*ic,1), outputs(runtime*oc);
+    std::cout << "Ports: " << pc << " Inputs: " << ic << " Outputs: " << oc << " Runtime: " << runtime << std::endl;
+
+    std::vector<char> inputs(runtime*ic,1), ports(runtime*pc), outputs(runtime*oc);
 
     for (vcd::Timestamp t : vcd_ast->timestamps) {
         for (int i=0; i<t.dumps.size();++i) {
@@ -206,14 +208,15 @@ int main(int argc, char** argv) {
     std::cout << "Success building program" << std::endl;
 
     //COMMAND QUEUE
-    std::cout << "Enqueueing..." << std::endl;
     cl::CommandQueue queue(context, device, 0, &err);
     if (err) {std::cerr << "Command queue error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
 
     //BUFFERS
     cl::Buffer inputs_buffer(context, inputs.begin(), inputs.end(), true);
     if (err) {std::cerr << "Buffer error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
-    cl::Buffer outputs_buffer(context, CL_MEM_WRITE_ONLY, sizeof(float)*runtime*oc);
+    cl::Buffer ports_buffer(context, CL_MEM_WRITE_ONLY, ports.size());
+    if (err) {std::cerr << "Buffer error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
+    cl::Buffer outputs_buffer(context, CL_MEM_WRITE_ONLY, outputs.size());
     if (err) {std::cerr << "Buffer error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
     //err = cl::copy(context, std::begin(inputs), std::end(inputs), inputs_buffer);
     if (err) {std::cerr << "Copy error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
@@ -221,17 +224,22 @@ int main(int argc, char** argv) {
 
     //KERNEL
     cl::KernelFunctor
-    <cl_int, cl::Buffer, cl_int, cl::Buffer>
+    <cl_int, cl::Buffer, cl_int, cl::Buffer, cl_int, cl::Buffer>
     kernelfunctor(program, "combinational");
     cl::Kernel kernel = kernelfunctor.getKernel();
+
     err = kernel.setArg(0, ic);
     if (err) {std::cerr << "Arg0 error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
     err = kernel.setArg(1, inputs_buffer);
     if (err) {std::cerr << "Arg1 error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
-    err = kernel.setArg(2, oc);
+    err = kernel.setArg(2, pc);
     if (err) {std::cerr << "Arg2 error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
-    err = kernel.setArg(3, outputs_buffer);
+    err = kernel.setArg(3, ports_buffer);
     if (err) {std::cerr << "Arg3 error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
+    err = kernel.setArg(4, oc);
+    if (err) {std::cerr << "Arg4 error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
+    err = kernel.setArg(5, outputs_buffer);
+    if (err) {std::cerr << "Arg5 error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
     std::cout << "Success building kernel" << std::endl;
 
     //RESTRICTIONS
@@ -242,6 +250,7 @@ int main(int argc, char** argv) {
     cl::NDRange global(runtime);
 
     //ENQUEUE
+    std::cout << "Enqueueing..." << std::endl;
     cl::Event event;
     err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, global, local, NULL, &event);
     if (err) {
@@ -250,7 +259,8 @@ int main(int argc, char** argv) {
     }
     event.wait();
     cl::copy(queue, outputs_buffer, outputs.begin(), outputs.end());
-
+    cl::copy(queue, ports_buffer, ports.begin(), ports.end());
+    
     //FINISH
     /*for (int i=0; i<runtime*oc; i++) {
         std::cout << (int)outputs[i] << ' ';
@@ -258,9 +268,20 @@ int main(int argc, char** argv) {
     }*/
     std::cout << "Done\n";
 
+    for (int j=0; j<pc; ++j) {
+        std::string name = "p"+std::to_string((int)j);
+        std::string id = genid(ic+j);
+        vcd_ast->signals.push_back(vcd::Signal{"wire",1,id,name});
+        vcd_ast->initial_dump.push_back(vcd::Dump{std::vector<char>{'0'},id});
+        for (int i=0; i<runtime; i++) {
+            char value = '0'+ports[i*pc+j];
+            vcd_ast->timestamps[i].dumps.push_back(vcd::Dump{std::vector<char>{value},id});
+        }
+    }
+
     for (int j=0; j<oc; ++j) {
         std::string name = "o"+std::to_string((int)j);
-        std::string id = genid(ic+j);
+        std::string id = genid(ic+pc+j);
         vcd_ast->signals.push_back(vcd::Signal{"wire",1,id,name});
         vcd_ast->initial_dump.push_back(vcd::Dump{std::vector<char>{'0'},id});
         for (int i=0; i<runtime; i++) {
