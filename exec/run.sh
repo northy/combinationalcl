@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 
+cp -n log.def.csv log.csv
+
 if [ $# -lt 4 ]
 then
     echo "Usage: ./run.sh <ports count> <inputs count> <outputs count> <events count>"

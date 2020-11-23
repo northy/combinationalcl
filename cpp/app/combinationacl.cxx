@@ -5,6 +5,7 @@
 #include <fstream>
 #include <tuple>
 #include <cmath>
+#include <chrono>
 
 #define CL_HPP_MINIMUM_OPENCL_VERSION 120
 #define CL_HPP_TARGET_OPENCL_VERSION 120
@@ -128,7 +129,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    int runtime = vcd_ast->timestamps.size();
+    const int runtime = vcd_ast->timestamps.size();
 
     std::cout << "Ports: " << pc << " Inputs: " << ic << " Outputs: " << oc << " Runtime: " << runtime << std::endl;
 
@@ -208,7 +209,7 @@ int main(int argc, char** argv) {
     std::cout << "Success building program" << std::endl;
 
     //COMMAND QUEUE
-    cl::CommandQueue queue(context, device, 0, &err);
+    cl::CommandQueue queue(context, device, CL_QUEUE_PROFILING_ENABLE, &err);
     if (err) {std::cerr << "Command queue error: " << getErrorString(err) << " (" << err << ")\n"; return 1; }
 
     //BUFFERS
@@ -252,14 +253,21 @@ int main(int argc, char** argv) {
     //ENQUEUE
     std::cout << "Enqueueing..." << std::endl;
     cl::Event event;
+    std::chrono::steady_clock::time_point cstart = std::chrono::steady_clock::now();
     err = queue.enqueueNDRangeKernel(kernel, cl::NullRange, global, local, NULL, &event);
     if (err) {
         std::cerr << "Enqueue range error: " << getErrorString(err) << std::endl;
         return 1;
     }
     event.wait();
+    std::chrono::steady_clock::time_point cend = std::chrono::steady_clock::now();
     cl::copy(queue, outputs_buffer, outputs.begin(), outputs.end());
     cl::copy(queue, ports_buffer, ports.begin(), ports.end());
+
+    auto gend = event.getProfilingInfo<CL_PROFILING_COMMAND_END>();
+    auto gstart = event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+
+    const long unsigned int cpu_time = std::chrono::duration_cast<std::chrono::nanoseconds>(cend - cstart).count(), gpu_time = gend - gstart;
     
     //FINISH
     /*for (int i=0; i<runtime*oc; i++) {
@@ -296,6 +304,10 @@ int main(int argc, char** argv) {
         compiler::compilevcd::compile_vcd_file(vcd_ast.value(),out);
         out.close();
     }
+
+    std::ofstream log("log.csv", std::ios_base::app | std::ios_base::out);
+
+    log << pc << ',' << ic << ',' << oc << ',' << runtime << ',' << cpu_time << ',' << gpu_time << std::endl;
 
     return 0;
 }
