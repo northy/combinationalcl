@@ -55,6 +55,12 @@ fn main()->io::Result<()> {
     let mut identifiers:Vec<char> = Vec::new();
     for i in 33..127 { identifiers.push(char::from(i)) }
 
+    let mut ids:Vec<String> = Vec::new();
+
+    for i in 0..ic+nc+oc {
+        ids.push(helper::genid(&identifiers, i as usize));
+    }
+
     {
         let vcdout = &mut fs::OpenOptions::new()
         .read(false)
@@ -71,19 +77,19 @@ fn main()->io::Result<()> {
         writeln!(vcdout, "$timescale 1ns $end").expect("Error writing line");
         writeln!(vcdout, "$scope module logic $end").expect("Error writing line");
         for i in 0..ic {
-            writeln!(vcdout, "$var wire 1 {} {} $end",helper::genid(&identifiers, i as usize),circuit[i as usize].0).expect("Error writing line");
+            writeln!(vcdout, "$var wire 1 {} {} $end",ids[i as usize],circuit[i as usize].0).expect("Error writing line");
         }
         writeln!(vcdout, "$upscope $end").expect("Error writing line");
         writeln!(vcdout, "$enddefinitions $end").expect("Error writing line");
         writeln!(vcdout, "$dumpvars").expect("Error writing line");
         for i in 0..ic {
-            writeln!(vcdout, "{}{}",0,helper::genid(&identifiers, i as usize)).expect("Error writing line");
+            writeln!(vcdout, "{}{}",0,ids[i as usize]).expect("Error writing line");
         }
         writeln!(vcdout, "$end").expect("Error writing line");
         for t in 0..k {
             writeln!(vcdout, "#{}",t).expect("Error writing line");
             for i in 0..ic {
-                writeln!(vcdout, "{}{}",rng.gen_range(0,2),helper::genid(&identifiers, i as usize)).expect("Error writing line");
+                writeln!(vcdout, "{}{}",rng.gen_range(0,2),ids[i as usize]).expect("Error writing line");
             }
         }
     }
@@ -98,7 +104,7 @@ fn main()->io::Result<()> {
 
         kernelout.set_len(0).expect("Error manipulating file");
 
-        writeln!(&mut kernelout, "__kernel void combinational(const int ic, __constant const char* inputs, const int pc, __global char* ports, const int oc, __global char* outputs) {{").expect("Error writing line");
+        writeln!(&mut kernelout, "__kernel void combinational(const int ic, __global const char* inputs, const int pc, __global char* ports, const int oc, __global char* outputs) {{").expect("Error writing line");
         writeln!(&mut kernelout,"int time = get_global_id(0);").expect("Error writing line");
         for i in 0..ic { //inputs
             writeln!(&mut kernelout,"const char {} = inputs[time*ic+{}];", &circuit[i as usize].0, i).expect("Error writing line");
