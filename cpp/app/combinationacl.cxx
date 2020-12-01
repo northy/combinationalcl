@@ -246,8 +246,7 @@ int main(int argc, char** argv) {
     //RESTRICTIONS
     size_t localsz = kernel.getWorkGroupInfo
     <CL_KERNEL_WORK_GROUP_SIZE>(device);
-    //cl::NDRange local(localsz,localsz);
-    cl::NDRange local(1);
+    cl::NDRange local;
     cl::NDRange global(runtime);
 
     //ENQUEUE
