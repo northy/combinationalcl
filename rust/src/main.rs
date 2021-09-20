@@ -7,12 +7,14 @@ use std::fs;
 use std::io::Write;
 use std::io;
 
+const SIMULATION_MODE:bool = false;
+
 #[macro_use]
 mod helper;
 
 fn main()->io::Result<()> {
     let args: Vec<String> = env::args().collect();
-    if args.len()<5 {
+    if args.len()!=5 {
         println!("Example input: ./gen n i o k
                 n - port count
                 i - input count
@@ -42,12 +44,14 @@ fn main()->io::Result<()> {
     for i in sz-oc..sz { //outputs
         circuit.push(("o".to_string()+&(oc-(sz-i)).to_string(),'o',vec![rng.gen_range(0,sz-oc)]));
     }
-    for c in &circuit {
-        print!("{} ({}) => ",c.0, c.1);
-        for x in &c.2 {
-            print!("{} ",x);
+    if SIMULATION_MODE {
+        for i in 0..circuit.len() {
+            print!("{} ({}) [{}] => ",&circuit[i].0, &circuit[i].1, i);
+            for x in &(circuit[i].2) {
+                print!("{} ",x);
+            }
+            println!();
         }
-        println!();
     }
 
     let now = Utc::now();

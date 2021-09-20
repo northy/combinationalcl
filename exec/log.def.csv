@@ -1,1 +1,1 @@
-p,i,o,k,CPU time (ns),GPU time (ns)
+p,i,o,k,CPU time (ns),GPU time (ns),CPU memory (kb),GPU local memory (kb),GPU global memory (kb)
