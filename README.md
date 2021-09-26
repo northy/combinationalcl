@@ -39,3 +39,17 @@ Execute with: ```./CombinationaCL <ports count> <input count> <output count> <ke
 Example execution: ```./CombinationaCL 600 20 20 out.cl out.vcd```
 
 This tool is currently under ```cpp/```.
+
+## Data colector
+
+This tool is meant to collect data by executing both of the previous tools with a single command.
+
+Compile both tools: ```./compile.sh```
+
+Single command execution:: ```./run.sh <ports count> <inputs count> <outputs count> <events count>```
+
+Data collection execution (change parameters in code): ```./collect.py```
+
+A copy of `log.def.csv` will be created as `log.csv`, and following executions will append metrics there.
+
+This tool is currently under ```exec/```.
