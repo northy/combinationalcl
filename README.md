@@ -53,3 +53,27 @@ Data collection execution (change parameters in code): ```./collect.py```
 A copy of `log.def.csv` will be created as `log.csv`, and following executions will append metrics there.
 
 This tool is currently under ```exec/```.
+
+### Running in EC2
+
+You can use:
+
+```sh
+screen -S data_collect -dm bash -c "./ec2_collect.sh"
+```
+
+To run the data collector in an EC2 environment.
+
+
+You can check the progress with:
+
+```sh
+screen -S data_collect -r
+# (CTRL+a, d to leave)
+```
+
+To stop the data collector simply run:
+
+```sh
+killall python3
+```
