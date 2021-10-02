@@ -311,7 +311,7 @@ int main(int argc, char** argv) {
 
     std::ofstream log("log.csv", std::ios_base::app | std::ios_base::out);
 
-    log << pc << ',' << ic << ',' << oc << ',' << runtime << ',' << cpu_time << ',' << gpu_time << ',' << cphysmem << ',' << glocalmem << ',' << gglobalmem << std::endl;
+    log << pc << ',' << ic << ',' << oc << ',' << runtime << ',' << cpu_time << ',' << gpu_time << ',' << cvirtmem << ',' << cphysmem << ',' << glocalmem << ',' << gglobalmem << std::endl;
 
     return 0;
 }
