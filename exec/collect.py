@@ -6,7 +6,8 @@ import signal
 
 ##### Definitions #####
 dummy = False
-limit_P = 500
+P_start = 100
+limit_P = 10000
 K = 1000
 #######################
 
@@ -44,8 +45,8 @@ def check_return(x,p,i,o) :
         log_noexec(x[0],p,i,o)
         limit_other = max(i,o)
 
-I_O_count = itertools.count(10,10)
-P_count = itertools.count(100,100)
+I_O_count = itertools.count(P_start//10,10)
+P_count = itertools.count(P_start,100)
 
 for I_O_max,P in zip(I_O_count,P_count) :
     if P>limit_P or limit_other<=limit_P : break
