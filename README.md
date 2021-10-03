@@ -56,13 +56,15 @@ This tool is currently under ```exec/```.
 
 ### Running in EC2
 
+Tested on Ubuntu Server 20.04 LTS (HVM), SSD Volume Type - ami-09e67e426f25ce0d7 (64-bit x86).
+
 You can use:
 
 ```sh
 screen -S data_collect -dm bash -c "./ec2_collect.sh"
 ```
 
-To run the data collector in an EC2 environment.
+To run the data collector in an EC2 environment. Don't forget to change \<bucket\> to your bucket name.
 
 
 You can check the progress with:
