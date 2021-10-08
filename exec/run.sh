@@ -11,13 +11,13 @@ fi
 ../rust/target/debug/combinationalcl $1 $2 $3 $4
 if [ $? -ne 0 ]
 then
-    echo "An error has occured ($?)"
+    echo "An error has occured"
     exit 1
 fi
 
 ../cpp/build/CombinationaCL $1 $2 $3 out.cl out.vcd
 if [ $? -ne 0 ]
 then
-    echo "An error has occured ($?)"
+    echo "An error has occured"
     exit 1
 fi

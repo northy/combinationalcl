@@ -155,14 +155,19 @@ int main(int argc, char** argv) {
         return 1;
     }
     std::cout << "Platform count is: " << platformList.size() << std::endl;
-    cl::Platform plat = platformList[0];
+    if (platformList.size()<=PLATFORM_NUMBER) { std::cerr << "Platform error: Not enough platforms" << std::endl; return 1; }
+    
+    cl::Platform plat = platformList[PLATFORM_NUMBER];
     std::cout << "Using " << plat.getInfo<CL_PLATFORM_NAME>() << std::endl;
 
     //DEVICE
     std::vector<cl::Device> devices;
     plat.getDevices(CPU_GPU_DEF, &devices);
-    auto device = devices.front();
+    std::cout << "Device count is: " << devices.size() << std::endl;
 
+    if (devices.size()<=DEVICE_NUMBER) { std::cerr << "Device error: Not enough devices" << std::endl; return 1; }
+    
+    cl::Device device = devices[DEVICE_NUMBER];
     std::cout << "Using device " << device.getInfo<CL_DEVICE_NAME>() << std::endl;
 
     //CONTEXT

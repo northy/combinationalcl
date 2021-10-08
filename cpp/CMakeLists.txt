@@ -1,7 +1,11 @@
 cmake_minimum_required(VERSION 3.0)
 project(iccad2018b CXX)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
-set (CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 17)
+
+#Debug
+#set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE RelWithDebInfo)
 
 find_package(Boost COMPONENTS system filesystem REQUIRED)
 IF (Boost_FOUND)
@@ -33,4 +37,5 @@ target_link_libraries(CombinationaCL
   ${Boost_SYSTEM_LIBRARY}
 )
 
-add_subdirectory(test)
+#Test directory
+#add_subdirectory(test)
