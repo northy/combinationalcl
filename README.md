@@ -56,16 +56,19 @@ This tool is currently under ```exec/```.
 
 ### Running in EC2
 
-Tested on Ubuntu Server 20.04 LTS (HVM), SSD Volume Type - ami-09e67e426f25ce0d7 (64-bit x86).
+Tested on Ubuntu Server 18.04 LTS (HVM), SSD Volume Type - ami-0747bdcabd34c712a (64-bit x86).
 
-You can use:
+Inside the exec folder, you can use:
 
 ```sh
 screen -S data_collect -dm bash -c "./ec2_collect.sh"
 ```
 
-To run the data collector in an EC2 environment. Don't forget to change \<bucket\> to your bucket name.
+To run the data collector in an EC2 environment. Don't forget to change \<bucket\> to your bucket name:
 
+```
+sed -i "s/<bucket>/my_bucket/g" ec2_collect.sh
+```
 
 You can check the progress with:
 
@@ -78,4 +81,17 @@ To stop the data collector simply run:
 
 ```sh
 killall python3
+```
+
+#### Mounting ephemeral storage
+
+First, run `lsblk` to confirm the efemeral storage name (in this example it was `/dev/nvme1n1`), then run:
+
+```sh
+sudo mkfs -t ext4 /dev/nvme1n1
+mkdir ephemeral
+sudo mount /dev/nvme1n1 ephemeral
+sudo chown -R ubuntu ephemeral
+mv combinationalcl ephemeral
+cd ephemeral/combinationalcl/exec
 ```

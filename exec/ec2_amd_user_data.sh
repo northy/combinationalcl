@@ -15,7 +15,8 @@ cd amdgpu-pro*
 apt install linux-modules-extra-$(uname -r) -y
 cat RPM-GPG-KEY-amdgpu | apt-key add -
 
-./amdgpu-pro-install -y --opencl=pal,legacy
+./amdgpu-pro-install -y --opencl=pal,legacy --headless --no-dkms
+#./amdgpu-pro-install -y --opencl=rocr --headless --no-dkms
 
 usermod -a -G video ubuntu
 usermod -a -G render ubuntu
