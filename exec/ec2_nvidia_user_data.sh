@@ -21,7 +21,7 @@ git clone https://github.com/northy/combinationalcl.git
 cd combinationalcl
 cd exec
 bash compile.sh
-sudo chown ubuntu /home/ubuntu/combinationalcl/ -R
+sudo chown -R ubuntu /home/ubuntu/combinationalcl/
 
 echo > /home/ubuntu/done
 reboot

@@ -2,6 +2,15 @@
 
 Gate-level digital circuits generator and simulator.
 
+- [CombinationalCL](#combinationalcl)
+  - [Combinational circuit generator](#combinational-circuit-generator)
+  - [OpenCL host platform](#opencl-host-platform)
+  - [Data colector](#data-colector)
+    - [Running in EC2](#running-in-ec2)
+      - [Mounting ephemeral storage](#mounting-ephemeral-storage)
+    - [Running in GCP](#running-in-gcp)
+      - [Mounting ephemeral storage](#mounting-ephemeral-storage-1)
+
 ## Combinational circuit generator
 
 Provided the following input arguments:
@@ -66,7 +75,7 @@ screen -S data_collect -dm bash -c "./ec2_collect.sh"
 
 To run the data collector in an EC2 environment. Don't forget to change \<bucket\> to your bucket name:
 
-```
+```sh
 sed -i "s/<bucket>/my_bucket/g" ec2_collect.sh
 ```
 
@@ -92,6 +101,57 @@ sudo mkfs -t ext4 /dev/nvme1n1
 mkdir ephemeral
 sudo mount /dev/nvme1n1 ephemeral
 sudo chown -R ubuntu ephemeral
+mv combinationalcl ephemeral
+cd ephemeral/combinationalcl/exec
+```
+
+### Running in GCP
+
+Tested on Ubuntu Server 20.04 LTS, n1-highmem-4 with Tesla K80 GPU.
+
+To install the dependencies, you can use the script at `exec/gcp_nvidia_user_data`:
+```sh
+sudo apt install screen -y
+wget -O script.sh https://raw.githubusercontent.com/northy/combinationalcl/master/exec/gcp_nvidia_user_data.sh
+chmod +x script.sh
+sed -i "s/<username>/$LOGNAME/g" script.sh
+sudo screen -S install -m bash -c "./script.sh"
+```
+
+Inside the exec folder, you can use:
+
+```sh
+screen -S data_collect -dm bash -c "./ec2_collect.sh"
+```
+
+To run the data collector in an EC2 environment. Don't forget to change \<bucket\> to your bucket name:
+
+```sh
+sed -i "s/<bucket>/my_bucket/g" ec2_collect.sh
+```
+
+You can check the progress with:
+
+```sh
+screen -S data_collect -r
+# (CTRL+a, d to leave)
+```
+
+To stop the data collector simply run:
+
+```sh
+killall python3
+```
+
+#### Mounting ephemeral storage
+
+First, run `lsblk` to confirm the efemeral storage name (in this example it was `/dev/nvme0n1`), then run:
+
+```sh
+sudo mkfs -t ext4 /dev/nvme0n1
+mkdir ephemeral
+sudo mount /dev/nvme0n1 ephemeral
+sudo chown -R $LOGNAME ephemeral
 mv combinationalcl ephemeral
 cd ephemeral/combinationalcl/exec
 ```
