@@ -2,7 +2,7 @@
 #basic packages
 dpkg --add-architecture i386
 apt-get update -y && apt upgrade -y
-apt-get install awscli python3 git g++ cmake libboost-all-dev ocl-icd-* opencl-headers cargo -y
+apt-get install python3 git g++ cmake libboost-all-dev ocl-icd-* opencl-headers cargo -y
 wget https://raw.githubusercontent.com/KhronosGroup/OpenCL-CLHPP/master/include/CL/opencl.hpp -O /usr/include/CL/opencl.hpp
 
 #opencl drivers
