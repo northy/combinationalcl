@@ -121,13 +121,13 @@ sudo screen -S install -m bash -c "./script.sh"
 Inside the exec folder, you can use:
 
 ```sh
-screen -S data_collect -dm bash -c "./ec2_collect.sh"
+screen -S data_collect -dm bash -c "./gcp_collect.sh"
 ```
 
-To run the data collector in an EC2 environment. Don't forget to change \<bucket\> to your bucket name:
+To run the data collector in an GCP environment. Don't forget to change \<bucket\> to your bucket name:
 
 ```sh
-sed -i "s/<bucket>/my_bucket/g" ec2_collect.sh
+sed -i "s/<bucket>/my_bucket/g" gcp_collect.sh
 ```
 
 You can check the progress with:
