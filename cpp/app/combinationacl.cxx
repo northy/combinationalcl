@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
     cl::vector<cl::Platform> platformList;
     err = cl::Platform::get(&platformList);
     if (err) {
-        std::cerr << getErrorString(err) << std::endl;
+        std::cerr << "Platform error: " << getErrorString(err) << std::endl;
         return 1;
     }
     std::cout << "Platform count is: " << platformList.size() << std::endl;
